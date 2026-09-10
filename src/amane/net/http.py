@@ -174,6 +174,11 @@ class WebClient:
     ) -> Response:
         """``ok_statuses`` 额外视为成功 (例如 RSS 304), 不重试、不当失败. 重试用尽后抛 ``RequestError``."""
         host = httpx.URL(url).host
+        # JavBus rejects image HEAD/GET requests without a same-site referrer.
+        # Preserve caller-supplied headers and add only the missing default.
+        if host and host.lower().endswith("javbus.com"):
+            headers = dict(headers or {})
+            headers.setdefault("Referer", "https://www.javbus.com/")
         await self._limiters.get(host).acquire()
 
         t0 = time.monotonic()
