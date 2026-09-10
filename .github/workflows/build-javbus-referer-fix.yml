@@ -1,0 +1,54 @@
+name: Build Amane Windows (JavBus Referer fix)
+
+on:
+  push:
+    branches:
+      - javbus-referer-fix
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install Python dependencies
+        run: uv sync --all-extras --dev --group packaging
+
+      - name: Build web application
+        run: |
+          pnpm --dir web install --frozen-lockfile
+          pnpm --dir web build
+
+      - name: Package Windows application
+        shell: pwsh
+        run: ./scripts/build_windows_app.ps1
+
+      - name: Upload Windows application
+        uses: actions/upload-artifact@v4
+        with:
+          name: Amane-v0.11.0-JavBus-Referer-fix
+          path: dist/Amane
+          if-no-files-found: error
+          retention-days: 14
