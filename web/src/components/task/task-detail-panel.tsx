@@ -219,8 +219,8 @@ export function TaskRowActions({
   const { t } = useTranslation(["tasks", "common"]);
   const isTerminal = task.status === "done" || task.status === "failed";
   const mediaFileId =
-    task.type === "scrape" && typeof task.payload.media_file_id === "number"
-      ? task.payload.media_file_id
+    task.type === "scrape" && typeof task.payload?.media_file_id === "number"
+      ? task.payload?.media_file_id ?? null
       : null;
 
   async function copySourcePath() {
