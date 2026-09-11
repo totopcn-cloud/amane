@@ -63,7 +63,8 @@ jobs:
         shell: pwsh
         run: |
           $tag = $env:GITHUB_REF_NAME
-          $zip = "dist/Amane-$tag-windows-x64.zip"
+          $safeTag = $tag -replace '[^A-Za-z0-9._-]', '-'
+          $zip = "dist/Amane-$safeTag-windows-x64.zip"
           if (-not (Test-Path dist/Amane/Amane.exe)) { throw "dist/Amane/Amane.exe missing" }
           if (-not (Test-Path dist/Amane/onedir/Amane.Server.exe)) { throw "onedir/Amane.Server.exe missing" }
           if (-not (Test-Path dist/Amane/web/dist/index.html)) { throw "web/dist/index.html missing" }
