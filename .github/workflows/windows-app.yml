@@ -2,6 +2,8 @@ name: Windows app
 
 on:
   push:
+    branches:
+      - "codex/archive-failed-source-files-build"
     tags:
       - "v*"
   workflow_dispatch:
