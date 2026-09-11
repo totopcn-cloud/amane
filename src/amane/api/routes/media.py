@@ -1,3 +1,6 @@
+import asyncio
+import sys
+from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, cast
 
 import structlog
@@ -78,6 +81,27 @@ async def get_media(media_id: int, repo: RepoDep) -> MediaFileResponse:
     if media is None:
         raise HTTPException(status_code=404, detail="Media file not found")
     return to_resp(MediaFileResponse, media)
+
+
+@router.post("/{media_id}/reveal")
+async def reveal_media(media_id: int, repo: RepoDep) -> dict[str, str]:
+    """Open the system file manager and select the source media file."""
+    media = await repo.get_media_file(media_id)
+    if media is None:
+        raise HTTPException(status_code=404, detail="Media file not found")
+
+    path = Path(media.path)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Media file path not found")
+
+    if sys.platform == "win32":
+        await asyncio.create_subprocess_exec("explorer.exe", f'/select,"{path}"')
+    elif sys.platform == "darwin":
+        await asyncio.create_subprocess_exec("open", "-R", str(path))
+    else:
+        await asyncio.create_subprocess_exec("xdg-open", str(path.parent))
+
+    return {"path": str(path)}
 
 
 @router.patch("/{media_id}")

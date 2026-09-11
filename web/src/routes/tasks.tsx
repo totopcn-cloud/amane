@@ -15,6 +15,7 @@ import {
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
+  IconArchive,
   IconChevronDown,
   IconChevronUp,
   IconListDetails,
@@ -39,6 +40,7 @@ import {
   pauseTaskWorkerMutation,
   resumeTaskWorkerMutation,
 } from "@/client/@tanstack/react-query.gen";
+import { client } from "@/client/client.gen";
 import { submitTask } from "@/client/sdk.gen";
 import type { TaskBatchAction, TaskStatus, TaskType } from "@/client/types.gen";
 import { ListToolbar } from "@/components/common/list-toolbar";
@@ -194,6 +196,32 @@ function TasksPage() {
     const ok = await confirm({ title, message, confirmLabel });
     if (!ok) return;
     batchMutation.mutate({ body: { action, ...body } });
+  }
+
+  async function handleArchiveFailed() {
+    const ok = await confirm({
+      title: t("confirm.archiveFailedTitle"),
+      message: t("confirm.archiveFailedMessage"),
+      confirmLabel: t("toolbar.archiveFailed"),
+    });
+    if (!ok) return;
+    try {
+      const response = await fetch(`${client.getConfig().baseUrl}/api/tasks/archive-failed`, {
+        method: "POST",
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = (await response.json()) as { archived?: number; skipped?: number; missing?: number };
+      notifications.show({
+        message: t("batch.archiveFailed", { count: result.archived ?? 0 }),
+        color: "blue",
+      });
+      invalidate();
+    } catch (error) {
+      notifications.show({
+        message: extractErrorMessage(error, t("common:toast.operationFailed")),
+        color: "red",
+      });
+    }
   }
 
   function toggleStatus(status: TaskStatus) {
@@ -496,24 +524,35 @@ function TasksPage() {
                 </Button>
               )}
               {deleteFailedFilter != null && (
-                <Button
-                  size="xs"
-                  variant="light"
-                  color="red"
-                  leftSection={<IconTrash size={14} />}
-                  loading={batchMutation.isPending}
-                  onClick={() =>
-                    void handleFilterBatch(
-                      "delete",
-                      deleteFailedFilter,
-                      t("confirm.clearFailedTitle"),
-                      t("confirm.clearFailedMessage"),
-                      t("common:actions.delete"),
-                    )
-                  }
-                >
-                  {t("toolbar.clearFailed")}
-                </Button>
+                <>
+                  <Button
+                    size="xs"
+                    variant="light"
+                    color="red"
+                    leftSection={<IconTrash size={14} />}
+                    loading={batchMutation.isPending}
+                    onClick={() =>
+                      void handleFilterBatch(
+                        "delete",
+                        deleteFailedFilter,
+                        t("confirm.clearFailedTitle"),
+                        t("confirm.clearFailedMessage"),
+                        t("common:actions.delete"),
+                      )
+                    }
+                  >
+                    {t("toolbar.clearFailed")}
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="light"
+                    leftSection={<IconArchive size={14} />}
+                    loading={batchMutation.isPending}
+                    onClick={() => void handleArchiveFailed()}
+                  >
+                    {t("toolbar.archiveFailed")}
+                  </Button>
+                </>
               )}
             </Group>
           ) : undefined

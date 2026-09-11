@@ -3,7 +3,9 @@
   "actions": {
     "cancelTask": "Cancel Task",
     "record": "Task record",
-    "submit": "Submit Task"
+    "submit": "Submit Task",
+    "copySourcePath": "Copy source path",
+    "revealSourceFile": "Locate source file"
   },
   "status": {
     "queued": "Queued",
@@ -96,6 +98,7 @@
     "retryFailed": "Retry failed",
     "clearDone": "Clear done",
     "clearFailed": "Clear failed",
+    "archiveFailed": "Archive failed files",
     "collapseAll": "Collapse All",
     "expandAll": "Expand All"
   },
@@ -104,6 +107,7 @@
     "resume": "Resume"
   },
   "batch": {
+    "archiveFailed": "Archived {{count}} failed files",
     "cancel": "Cancelled {{count}}",
     "cancel_one": "Cancelled {{count}}",
     "cancel_other": "Cancelled {{count}}",
@@ -115,6 +119,8 @@
     "delete_other": "Deleted {{count}}"
   },
   "confirm": {
+    "archiveFailedTitle": "Archive failed files",
+    "archiveFailedMessage": "Move all failed scrape files into each library's “识别失败” folder while preserving their original directory structure?",
     "deleteTitle": "Delete task",
     "deleteMessage": "Delete this task record?",
     "cancelTitle": "Cancel tasks",

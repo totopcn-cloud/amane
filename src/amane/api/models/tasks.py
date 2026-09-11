@@ -98,6 +98,12 @@ class TaskBatchResponse(BaseModel):
     """retry 新建任务的 id; 其它 action 为空."""
 
 
+class ArchiveFailedResponse(BaseModel):
+    archived: int = 0
+    skipped: int = 0
+    missing: int = 0
+
+
 class TaskWorkerResponse(BaseModel):
     paused: bool
 

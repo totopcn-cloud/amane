@@ -15,7 +15,9 @@ import {
 import {
   IconChevronDown,
   IconChevronRight,
+  IconCopy,
   IconDownload,
+  IconFolderSearch,
   IconPlayerStop,
   IconRefresh,
   IconTrash,
@@ -23,6 +25,7 @@ import {
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { client } from "@/client/client.gen";
+import { getMedia } from "@/client/sdk.gen";
 import type { TaskResponse } from "@/client/types.gen";
 import { TaskLogView } from "@/components/log/task-log-view";
 import { TaskReportPanel } from "@/components/task/task-report-panel";
@@ -215,6 +218,21 @@ export function TaskRowActions({
 }) {
   const { t } = useTranslation(["tasks", "common"]);
   const isTerminal = task.status === "done" || task.status === "failed";
+  const mediaFileId =
+    task.type === "scrape" && typeof task.payload.media_file_id === "number"
+      ? task.payload.media_file_id
+      : null;
+
+  async function copySourcePath() {
+    if (mediaFileId == null) return;
+    const { data } = await getMedia({ path: { media_id: mediaFileId }, throwOnError: true });
+    await navigator.clipboard.writeText(data.path);
+  }
+
+  async function revealSourceFile() {
+    if (mediaFileId == null) return;
+    await fetch(`${client.getConfig().baseUrl}/api/media/${mediaFileId}/reveal`, { method: "POST" });
+  }
 
   return (
     <Group
@@ -245,6 +263,20 @@ export function TaskRowActions({
             <IconRefresh size={16} />
           </ActionIcon>
         </Tooltip>
+      )}
+      {mediaFileId != null && (
+        <>
+          <Tooltip label={t("actions.copySourcePath")}>
+            <ActionIcon variant="subtle" onClick={() => void copySourcePath()}>
+              <IconCopy size={16} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label={t("actions.revealSourceFile")}>
+            <ActionIcon variant="subtle" onClick={() => void revealSourceFile()}>
+              <IconFolderSearch size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </>
       )}
       {isTerminal && (
         <Tooltip label={t("common:actions.delete")}>

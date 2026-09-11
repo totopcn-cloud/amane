@@ -7,8 +7,11 @@ from pathlib import Path
 from ...db.models import Task, TaskStatus, TaskType
 from ...db.repository import Repository
 from ...observability import remove_task_dir
+from ...enums import MoveMode
+from ...library import FAILED_DIRNAME
+from ...organize import execute_organize
 from ...scheduler.worker import AsyncWorker
-from ..models.tasks import TaskBatchAction, TaskBatchResponse
+from ..models.tasks import ArchiveFailedResponse, TaskBatchAction, TaskBatchResponse
 
 CANCEL_ERROR = "Cancelled by user"
 
@@ -21,6 +24,51 @@ _ACTION_STATUSES: dict[TaskBatchAction, frozenset[TaskStatus]] = {
     TaskBatchAction.DELETE: _DELETABLE,
     TaskBatchAction.RETRY: _RETRYABLE,
 }
+
+
+async def archive_failed_scrape_files(repo: Repository) -> ArchiveFailedResponse:
+    """Move every failed scrape's source file below its library's ``识别失败`` directory."""
+    tasks = await repo.find_tasks(statuses=[TaskStatus.FAILED], task_types=[TaskType.SCRAPE])
+    media_ids = {
+        value
+        for task in tasks
+        if isinstance((value := (task.payload or {}).get("media_file_id")), int) and not isinstance(value, bool)
+    }
+    archived = skipped = missing = 0
+    for media_id in media_ids:
+        media = await repo.get_media_file(media_id)
+        if media is None:
+            missing += 1
+            continue
+        library = await repo.get_library(media.library_id)
+        if library is None:
+            skipped += 1
+            continue
+
+        source = Path(media.path)
+        root = Path(library.path)
+        try:
+            relative = source.relative_to(root)
+        except ValueError:
+            skipped += 1
+            continue
+        if relative.parts and relative.parts[0] == FAILED_DIRNAME:
+            skipped += 1
+            continue
+
+        result = await execute_organize(
+            source=source,
+            target_dir=root / FAILED_DIRNAME / relative.parent,
+            target_stem=source.stem,
+            mode=MoveMode.MOVE,
+        )
+        if not result.success or result.dest is None:
+            missing += 1 if result.error and "not found" in result.error.lower() else 0
+            skipped += 0 if result.error and "not found" in result.error.lower() else 1
+            continue
+        await repo.update_media_file(media_id, path=str(result.dest))
+        archived += 1
+    return ArchiveFailedResponse(archived=archived, skipped=skipped, missing=missing)
 
 
 def _intersect_statuses(requested: Sequence[TaskStatus] | None, allowed: frozenset[TaskStatus]) -> list[TaskStatus]:

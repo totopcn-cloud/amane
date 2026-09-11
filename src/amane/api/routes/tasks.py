@@ -19,8 +19,8 @@ from ..models import (
     TaskResponse,
     TaskSubmission,
 )
-from ..models.tasks import TaskBatchRequest, TaskBatchResponse, TaskWorkerResponse
-from ..support.task_batch import execute_task_batch
+from ..models.tasks import ArchiveFailedResponse, TaskBatchRequest, TaskBatchResponse, TaskWorkerResponse
+from ..support.task_batch import archive_failed_scrape_files, execute_task_batch
 from ..support.task_resolve import resolve_submission
 
 logger = structlog.get_logger()
@@ -204,6 +204,11 @@ async def batch_tasks(
         submitted=result.submitted,
     )
     return result
+
+
+@router.post("/archive-failed")
+async def archive_failed_tasks(repo: RepoDep) -> ArchiveFailedResponse:
+    return await archive_failed_scrape_files(repo)
 
 
 @router.get("/{task_id}")
