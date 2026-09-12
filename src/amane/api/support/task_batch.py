@@ -63,15 +63,26 @@ def _move_failed_file(source: Path, target_parent: Path) -> tuple[Path | None, s
 
 
 async def archive_failed_scrape_files(repo: Repository) -> ArchiveFailedResponse:
-    """Archive failed media, even when its historical task records were cleared."""
-    failed_media = await repo.list_media_files(status=[MediaFileStatus.FAILED], limit=None)
+    """Archive failed media, accepting both failed status and failed scrape tasks."""
+    failed_media_by_id = {
+        media.id: media
+        for media in await repo.list_media_files(status=[MediaFileStatus.FAILED], limit=None)
+        if media.id is not None
+    }
+    failed_tasks = await repo.find_tasks(statuses=[TaskStatus.FAILED], task_types=[TaskType.SCRAPE])
+    for task in failed_tasks:
+        media_id = (task.payload or {}).get("media_file_id")
+        if not isinstance(media_id, int) or isinstance(media_id, bool) or media_id in failed_media_by_id:
+            continue
+        media = await repo.get_media_file(media_id)
+        # A later successful retry takes precedence over a historical failed task.
+        if media is not None and media.status != MediaFileStatus.SCRAPED:
+            failed_media_by_id[media_id] = media
+    failed_media_ids = frozenset(failed_media_by_id)
     folders: dict[tuple[int, Path], tuple[Path, list[tuple[int, Path]]]] = {}
     root_files: dict[tuple[int, Path], tuple[Path, int]] = {}
     archived = skipped = missing = 0
-    for media in failed_media:
-        if media.id is None:
-            skipped += 1
-            continue
+    for media in failed_media_by_id.values():
         library = await repo.get_library(media.library_id)
         if library is None:
             skipped += 1
@@ -125,8 +136,8 @@ async def archive_failed_scrape_files(repo: Repository) -> ArchiveFailedResponse
             for item in media_by_library[library_id]
             if Path(item.path).is_relative_to(folder)
         ]
-        # 同目录存在已成功、待处理或跳过的视频时，不得移动整目录；只移失败源文件.
-        if any(item.status != MediaFileStatus.FAILED for item in contained):
+        # 同目录存在未失败的视频时，不得移动整目录；只移失败源文件.
+        if any(item.id not in failed_media_ids for item in contained):
             for media_id, source in failed_sources:
                 destination, error = await _move_failed_file(
                     source,
