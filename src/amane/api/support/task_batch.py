@@ -8,7 +8,7 @@ from pathlib import Path
 from ...db.models import MediaFile, Task, TaskStatus, TaskType
 from ...db.repository import Repository
 from ...observability import remove_task_dir
-from ...library import FAILED_ARCHIVE_DIRNAME, FAILED_DIRNAME
+from ...library import FAILED_ARCHIVE_DIRNAME, FAILED_DIRNAME, LEGACY_FAILED_ARCHIVE_DIRNAME
 from ...scheduler.worker import AsyncWorker
 from ...utils.threads import in_thread
 from ..models.tasks import ArchiveFailedResponse, TaskBatchAction, TaskBatchResponse
@@ -63,7 +63,7 @@ def _move_failed_file(source: Path, target_parent: Path) -> tuple[Path | None, s
 
 
 async def archive_failed_scrape_files(repo: Repository) -> ArchiveFailedResponse:
-    """Move every failed scrape's complete source directory below ``归档失败``."""
+    """Move every failed scrape's complete source directory below ``#归档失败``."""
     tasks = await repo.find_tasks(statuses=[TaskStatus.FAILED], task_types=[TaskType.SCRAPE])
     media_ids = {
         value
@@ -98,7 +98,11 @@ async def archive_failed_scrape_files(repo: Repository) -> ArchiveFailedResponse
             else:
                 skipped += 1
             continue
-        if relative_folder.parts and relative_folder.parts[0] in {FAILED_DIRNAME, FAILED_ARCHIVE_DIRNAME}:
+        if relative_folder.parts and relative_folder.parts[0] in {
+            FAILED_DIRNAME,
+            FAILED_ARCHIVE_DIRNAME,
+            LEGACY_FAILED_ARCHIVE_DIRNAME,
+        }:
             skipped += 1
             continue
         folders[(media.library_id, folder)] = (root, folder)
