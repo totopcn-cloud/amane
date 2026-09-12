@@ -63,23 +63,13 @@ def _move_failed_file(source: Path, target_parent: Path) -> tuple[Path | None, s
 
 
 async def archive_failed_scrape_files(repo: Repository) -> ArchiveFailedResponse:
-    """Archive failed sources, preserving mixed folders that contain non-failed videos."""
-    tasks = await repo.find_tasks(statuses=[TaskStatus.FAILED], task_types=[TaskType.SCRAPE])
-    media_ids = {
-        value
-        for task in tasks
-        if isinstance((value := (task.payload or {}).get("media_file_id")), int) and not isinstance(value, bool)
-    }
+    """Archive failed media, even when its historical task records were cleared."""
+    failed_media = await repo.list_media_files(status=[MediaFileStatus.FAILED], limit=None)
     folders: dict[tuple[int, Path], tuple[Path, list[tuple[int, Path]]]] = {}
     root_files: dict[tuple[int, Path], tuple[Path, int]] = {}
     archived = skipped = missing = 0
-    for media_id in media_ids:
-        media = await repo.get_media_file(media_id)
-        if media is None:
-            missing += 1
-            continue
-        # 历史失败任务不代表文件当前仍失败：重试成功后不可再归档它.
-        if media.status != MediaFileStatus.FAILED:
+    for media in failed_media:
+        if media.id is None:
             skipped += 1
             continue
         library = await repo.get_library(media.library_id)
@@ -97,10 +87,7 @@ async def archive_failed_scrape_files(repo: Repository) -> ArchiveFailedResponse
             continue
         # Never move the media library root itself. A root-level video is moved by itself.
         if not relative_folder.parts:
-            if media.id is not None:
-                root_files[(media.library_id, source)] = (root, media.id)
-            else:
-                skipped += 1
+            root_files[(media.library_id, source)] = (root, media.id)
             continue
         if relative_folder.parts and relative_folder.parts[0] in {
             FAILED_DIRNAME,
@@ -112,8 +99,7 @@ async def archive_failed_scrape_files(repo: Repository) -> ArchiveFailedResponse
         key = (media.library_id, folder)
         if key not in folders:
             folders[key] = (root, [])
-        if media.id is not None:
-            folders[key][1].append((media.id, source))
+        folders[key][1].append((media.id, source))
 
     for (_, source), (root, media_id) in root_files.items():
         destination, error = await _move_failed_file(source, root / FAILED_ARCHIVE_DIRNAME)
