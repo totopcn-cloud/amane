@@ -482,7 +482,10 @@ class WatcherService:
                 task = await self._repo.create_task(
                     task_type=TaskType.SCRAPE,
                     payload=ScrapePayload(
-                        media_file_id=media.id, number=parsed.number, content_type=parsed.content_type
+                        media_file_id=media.id,
+                        source_path=path_str,
+                        number=parsed.number,
+                        content_type=parsed.content_type,
                     ),
                 )
                 logger.info("scrape task submitted", task_id=task.id, number=parsed.number, path=path_str)
