@@ -55,6 +55,13 @@ jobs:
       - name: Setup just
         uses: extractions/setup-just@v4
 
+      # Always rebuild the UI: a cached or committed dist directory must never be packaged.
+      - name: Rebuild web assets
+        shell: pwsh
+        run: |
+          if (Test-Path web/dist) { Remove-Item web/dist -Recurse -Force }
+          pnpm --dir web build
+
       - name: just windows-app
         run: just windows-app
 
