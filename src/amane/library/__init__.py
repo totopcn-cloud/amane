@@ -9,6 +9,7 @@ from .cloud_path import (
 from .rules import (
     DEFAULT_SUBTITLE_EXTENSIONS,
     DEFAULT_TRAILER_PATTERN,
+    FAILED_ARCHIVE_DIRNAME,
     FAILED_DIRNAME,
     MEDIA_EXTENSIONS,
     TRASH_DIRNAME,
@@ -26,6 +27,7 @@ from .scan import LibraryFileKind, LibraryHit, LibraryScan
 __all__ = [
     "DEFAULT_SUBTITLE_EXTENSIONS",
     "DEFAULT_TRAILER_PATTERN",
+    "FAILED_ARCHIVE_DIRNAME",
     "FAILED_DIRNAME",
     "MEDIA_EXTENSIONS",
     "TRASH_DIRNAME",

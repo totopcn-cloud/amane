@@ -99,7 +99,7 @@
     "retryFailed": "Retry failed",
     "clearDone": "Clear done",
     "clearFailed": "Clear failed",
-    "archiveFailed": "Archive failed files",
+    "archiveFailed": "Archive failed folders",
     "collapseAll": "Collapse All",
     "expandAll": "Expand All"
   },
@@ -108,7 +108,7 @@
     "resume": "Resume"
   },
   "batch": {
-    "archiveFailed": "Archived {{count}} failed files",
+    "archiveFailed": "Archived {{count}} failed folders",
     "cancel": "Cancelled {{count}}",
     "cancel_one": "Cancelled {{count}}",
     "cancel_other": "Cancelled {{count}}",
@@ -120,8 +120,8 @@
     "delete_other": "Deleted {{count}}"
   },
   "confirm": {
-    "archiveFailedTitle": "Archive failed files",
-    "archiveFailedMessage": "Move all failed scrape files into each library's “识别失败” folder while preserving their original directory structure?",
+    "archiveFailedTitle": "Archive failed folders",
+    "archiveFailedMessage": "Move each failed scrape file's entire source folder into each library's “归档失败” folder while preserving its original directory structure. Images, subtitles, and other files in the same folder move with it. Continue?",
     "deleteTitle": "Delete task",
     "deleteMessage": "Delete this task record?",
     "cancelTitle": "Cancel tasks",
