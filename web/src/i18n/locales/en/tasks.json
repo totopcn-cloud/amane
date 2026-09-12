@@ -121,7 +121,7 @@
   },
   "confirm": {
     "archiveFailedTitle": "Archive failed folders",
-    "archiveFailedMessage": "Move each failed scrape file's entire source folder into each library's “#归档失败” folder while preserving its original directory structure. Images, subtitles, and other files in the same folder move with it. Files directly in the library root move into “#归档失败” themselves. Continue?",
+    "archiveFailedMessage": "Move a complete source folder into each library's “#归档失败” folder only when every registered video inside it has failed scraping. If it also contains successful or pending videos, move only the failed source file. Continue?",
     "deleteTitle": "Delete task",
     "deleteMessage": "Delete this task record?",
     "cancelTitle": "Cancel tasks",
