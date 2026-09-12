@@ -110,6 +110,7 @@ class RefreshHandler(TaskHandler[RefreshPayload, RefreshResult]):
                     task_type=TaskType.SCRAPE,
                     payload=ScrapePayload(
                         media_file_id=f.id,
+                        source_path=f.path,
                         number=parsed.number,
                         content_type=parsed.content_type,
                         use_cache=payload.use_cache,

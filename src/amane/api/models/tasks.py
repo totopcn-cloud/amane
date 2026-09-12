@@ -98,6 +98,12 @@ class TaskBatchResponse(BaseModel):
     """retry 新建任务的 id; 其它 action 为空."""
 
 
+class ArchiveFailedResponse(BaseModel):
+    archived: int = 0
+    skipped: int = 0
+    missing: int = 0
+
+
 class TaskWorkerResponse(BaseModel):
     paused: bool
 
@@ -138,6 +144,7 @@ class ScrapeRequest(BaseModel):
                     number=self.number,
                     content_type=self.content_type or infer_content_type(self.number),
                     media_file_id=self.media_id,
+                    source_path=media.path,
                     use_cache=self.use_cache,
                 )
             parsed = parse_file_info(media.path)
@@ -146,6 +153,7 @@ class ScrapeRequest(BaseModel):
                 number=parsed.number,
                 content_type=self.content_type or parsed.content_type,
                 media_file_id=self.media_id,
+                source_path=media.path,
                 use_cache=self.use_cache,
             )
         assert self.number is not None

@@ -9,6 +9,7 @@ import structlog
 from pydantic import BaseModel
 
 from ..config import HotSettings
+from ..db.models import MediaFileStatus, Task, TaskType
 from ..events import EventType
 from ..observability import Recorder
 
@@ -16,7 +17,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
     from pathlib import Path
 
-    from ..db.models import Task, TaskType
     from ..db.repository import Repository
     from ..events import EventBus
     from ..handlers.protocol import TaskHandler
@@ -133,6 +133,17 @@ class AsyncWorker:
                 t.cancel()
             await asyncio.gather(*self._active_tasks, return_exceptions=True)
 
+    async def _mark_scrape_media_failed(self, task: Task) -> None:
+        """让当前 MediaFile 的状态与刮削任务失败保持一致。"""
+        if task.type != TaskType.SCRAPE:
+            return
+        media_id = (task.payload or {}).get("media_file_id")
+        if not isinstance(media_id, int) or isinstance(media_id, bool):
+            return
+        media = await self._repo.get_media_file(media_id)
+        if media is not None:
+            await self._repo.update_media_file(media_id, status=MediaFileStatus.FAILED)
+
     async def _execute(self, task: Task) -> None:
         assert task.id is not None
         task_id = task.id
@@ -227,6 +238,7 @@ class AsyncWorker:
                     duration_s = round(time.monotonic() - start_time, 2)
                     logger.exception("task crashed", error=str(e), duration_s=duration_s)
                     await self._repo.fail_task(task_id, error=str(e))
+                    await self._mark_scrape_media_failed(task)
                     await _finalize_recorder(success=False, error=str(e))
                     if self._event_bus:
                         await self._event_bus.emit(
@@ -243,6 +255,7 @@ class AsyncWorker:
                     except Exception as e:
                         logger.exception("task complete with followups failed", error=str(e), duration_s=duration_s)
                         await self._repo.fail_task(task_id, error=str(e))
+                        await self._mark_scrape_media_failed(task)
                         await _finalize_recorder(success=False, error=str(e))
                         if self._event_bus:
                             await self._event_bus.emit(
@@ -260,6 +273,7 @@ class AsyncWorker:
                     duration_s = round(time.monotonic() - start_time, 2)
                     err = result.error or "Unknown error"
                     await self._repo.fail_task(task_id, error=err)
+                    await self._mark_scrape_media_failed(task)
                     logger.warning("task failed", error=result.error, duration_s=duration_s)
                     await _finalize_recorder(success=False, error=err)
                     if self._event_bus:

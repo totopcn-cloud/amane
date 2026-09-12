@@ -3,7 +3,10 @@
   "actions": {
     "cancelTask": "Cancel Task",
     "record": "Task record",
-    "submit": "Submit Task"
+    "submit": "Submit Task",
+    "openSourceFile": "Open file",
+    "revealSourceFile": "Locate source file",
+    "scrapeWithNumber": "Scrape with number"
   },
   "status": {
     "queued": "Queued",
@@ -96,6 +99,7 @@
     "retryFailed": "Retry failed",
     "clearDone": "Clear done",
     "clearFailed": "Clear failed",
+    "archiveFailed": "Archive failed folders",
     "collapseAll": "Collapse All",
     "expandAll": "Expand All"
   },
@@ -104,6 +108,7 @@
     "resume": "Resume"
   },
   "batch": {
+    "archiveFailed": "Archived {{count}} failed folders",
     "cancel": "Cancelled {{count}}",
     "cancel_one": "Cancelled {{count}}",
     "cancel_other": "Cancelled {{count}}",
@@ -115,6 +120,8 @@
     "delete_other": "Deleted {{count}}"
   },
   "confirm": {
+    "archiveFailedTitle": "Archive failed folders",
+    "archiveFailedMessage": "Move a complete source folder into each library's “#归档失败” folder only when every registered video inside it has failed scraping. If it also contains successful or pending videos, move only the failed source file. Continue?",
     "deleteTitle": "Delete task",
     "deleteMessage": "Delete this task record?",
     "cancelTitle": "Cancel tasks",

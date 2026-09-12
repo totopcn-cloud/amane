@@ -34,6 +34,11 @@ _SUBTITLE_EXT_RE = re.compile(r"^\.[a-z0-9]+$")
 
 # 固定保留名. 路径任一深度含此目录名则不入库.
 TRASH_DIRNAME = ".amane_trash"
+FAILED_DIRNAME = "识别失败"
+# 前缀让资源管理器按名称排序时将失败归档置顶.
+FAILED_ARCHIVE_DIRNAME = "#归档失败"
+# 兼容此前版本已创建的目录，避免其中内容在刷新时重新进入媒体库.
+LEGACY_FAILED_ARCHIVE_DIRNAME = "归档失败"
 
 # .strm 在扫描扩展名里 (当正片入口), 但是路径指针不是视频字节; 体积过滤不把它当视频字节.
 _POINTER_EXTENSIONS = frozenset({".strm"})
@@ -145,5 +150,8 @@ def is_skipped_media(path: Path, pattern: str | None) -> bool:
 
 
 def is_in_trash(path: Path) -> bool:
-    """路径任一深度组件为 `.amane_trash` 则视为回收站内容: 不入库、不触发监控事件."""
-    return any(part == TRASH_DIRNAME for part in path.parts)
+    """固定归档目录内容不入库、不触发监控事件."""
+    return any(
+        part in {TRASH_DIRNAME, FAILED_DIRNAME, FAILED_ARCHIVE_DIRNAME, LEGACY_FAILED_ARCHIVE_DIRNAME}
+        for part in path.parts
+    )
