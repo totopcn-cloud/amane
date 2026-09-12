@@ -85,6 +85,9 @@ class ScrapePayload(BaseModel):
     number: str
     content_type: ContentType = ContentType.CENSORED
     media_file_id: int | None = None
+    # 任务记录必须能在 MediaFile 被后续扫描清理后仍定位到原始文件。
+    # 仅作为失败归档/定位的回退信息，真正刮削仍以 media_file_id 为准。
+    source_path: str | None = None
     use_cache: set[CacheKind] = {CacheKind.metadata, CacheKind.trans}
 
 
