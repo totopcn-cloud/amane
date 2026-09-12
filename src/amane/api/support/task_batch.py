@@ -1,16 +1,16 @@
 """按 ID 或与列表同形的 status/type 筛选."""
 
 import contextlib
+import shutil
 from collections.abc import Sequence
 from pathlib import Path
 
-from ...db.models import Task, TaskStatus, TaskType
+from ...db.models import MediaFile, Task, TaskStatus, TaskType
 from ...db.repository import Repository
 from ...observability import remove_task_dir
-from ...enums import MoveMode
-from ...library import FAILED_DIRNAME
-from ...organize import execute_organize
+from ...library import FAILED_ARCHIVE_DIRNAME, FAILED_DIRNAME
 from ...scheduler.worker import AsyncWorker
+from ...utils.threads import in_thread
 from ..models.tasks import ArchiveFailedResponse, TaskBatchAction, TaskBatchResponse
 
 CANCEL_ERROR = "Cancelled by user"
@@ -26,14 +26,33 @@ _ACTION_STATUSES: dict[TaskBatchAction, frozenset[TaskStatus]] = {
 }
 
 
+@in_thread
+def _move_failed_folder(source: Path, target_parent: Path) -> tuple[Path | None, str | None]:
+    """Move a complete source directory, suffixing the directory name on collision."""
+    if not source.is_dir():
+        return None, f"Source directory not found: {source}"
+    try:
+        target_parent.mkdir(parents=True, exist_ok=True)
+        destination = target_parent / source.name
+        index = 1
+        while destination.exists():
+            destination = target_parent / f"{source.name}({index})"
+            index += 1
+        shutil.move(str(source), str(destination))
+        return destination, None
+    except OSError as exc:
+        return None, str(exc)
+
+
 async def archive_failed_scrape_files(repo: Repository) -> ArchiveFailedResponse:
-    """Move every failed scrape's source file below its library's ``识别失败`` directory."""
+    """Move every failed scrape's complete source directory below ``归档失败``."""
     tasks = await repo.find_tasks(statuses=[TaskStatus.FAILED], task_types=[TaskType.SCRAPE])
     media_ids = {
         value
         for task in tasks
         if isinstance((value := (task.payload or {}).get("media_file_id")), int) and not isinstance(value, bool)
     }
+    folders: dict[tuple[int, Path], tuple[Path, Path]] = {}
     archived = skipped = missing = 0
     for media_id in media_ids:
         media = await repo.get_media_file(media_id)
@@ -47,26 +66,41 @@ async def archive_failed_scrape_files(repo: Repository) -> ArchiveFailedResponse
 
         source = Path(media.path)
         root = Path(library.path)
+        folder = source.parent
         try:
-            relative = source.relative_to(root)
+            relative_folder = folder.relative_to(root)
         except ValueError:
             skipped += 1
             continue
-        if relative.parts and relative.parts[0] == FAILED_DIRNAME:
+        # Never move the media library root itself. Only a video's own folder is archived.
+        if not relative_folder.parts:
             skipped += 1
             continue
-
-        result = await execute_organize(
-            source=source,
-            target_dir=root / FAILED_DIRNAME / relative.parent,
-            target_stem=source.stem,
-            mode=MoveMode.MOVE,
-        )
-        if not result.success or result.dest is None:
-            missing += 1 if result.error and "not found" in result.error.lower() else 0
-            skipped += 0 if result.error and "not found" in result.error.lower() else 1
+        if relative_folder.parts and relative_folder.parts[0] in {FAILED_DIRNAME, FAILED_ARCHIVE_DIRNAME}:
+            skipped += 1
             continue
-        await repo.update_media_file(media_id, path=str(result.dest))
+        folders[(media.library_id, folder)] = (root, folder)
+
+    media_by_library: dict[int, Sequence[MediaFile]] = {}
+    for (library_id, _), (root, folder) in folders.items():
+        relative_folder = folder.relative_to(root)
+        destination, error = await _move_failed_folder(
+            folder,
+            root / FAILED_ARCHIVE_DIRNAME / relative_folder.parent,
+        )
+        if destination is None:
+            missing += 1 if error and "not found" in error.lower() else 0
+            skipped += 0 if error and "not found" in error.lower() else 1
+            continue
+        if library_id not in media_by_library:
+            media_by_library[library_id] = await repo.list_media_files(library_id=library_id, limit=None)
+        for contained in media_by_library[library_id]:
+            try:
+                relative_path = Path(contained.path).relative_to(folder)
+            except ValueError:
+                continue
+            if contained.id is not None:
+                await repo.update_media_file(contained.id, path=str(destination / relative_path))
         archived += 1
     return ArchiveFailedResponse(archived=archived, skipped=skipped, missing=missing)
 

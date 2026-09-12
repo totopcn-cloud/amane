@@ -97,7 +97,7 @@
     "retryFailed": "重试失败",
     "clearDone": "清除已完成",
     "clearFailed": "清除失败",
-    "archiveFailed": "一键归档失败",
+    "archiveFailed": "一键归档失败文件夹",
     "collapseAll": "全部收起",
     "expandAll": "全部展开"
   },
@@ -106,7 +106,7 @@
     "resume": "恢复"
   },
   "batch": {
-    "archiveFailed": "已归档 {{count}} 个失败文件",
+    "archiveFailed": "已归档 {{count}} 个失败文件夹",
     "cancel": "已取消 {{count}} 个",
     "cancel_one": "已取消 {{count}} 个",
     "cancel_other": "已取消 {{count}} 个",
@@ -118,8 +118,8 @@
     "delete_other": "已删除 {{count}} 个"
   },
   "confirm": {
-    "archiveFailedTitle": "一键归档失败",
-    "archiveFailedMessage": "将所有刮削失败文件按原目录结构移动到各媒体库的“识别失败”文件夹，是否继续？",
+    "archiveFailedTitle": "一键归档失败文件夹",
+    "archiveFailedMessage": "将失败刮削文件所在的整个文件夹按原目录结构移动到各媒体库的“归档失败”文件夹；同目录的图片、字幕等文件也会一并移动。是否继续？",
     "deleteTitle": "删除任务",
     "deleteMessage": "确定删除此任务记录？",
     "cancelTitle": "取消任务",
