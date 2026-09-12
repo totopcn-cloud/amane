@@ -4,8 +4,9 @@
     "cancelTask": "Cancel Task",
     "record": "Task record",
     "submit": "Submit Task",
-    "copySourcePath": "Copy source path",
-    "revealSourceFile": "Locate source file"
+    "openSourceFile": "Open file",
+    "revealSourceFile": "Locate source file",
+    "scrapeWithNumber": "Scrape with number"
   },
   "status": {
     "queued": "Queued",

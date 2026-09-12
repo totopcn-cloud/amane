@@ -4,8 +4,9 @@
     "cancelTask": "取消任务",
     "record": "任务记录",
     "submit": "提交任务",
-    "copySourcePath": "复制源文件路径",
-    "revealSourceFile": "定位源文件"
+    "openSourceFile": "打开文件",
+    "revealSourceFile": "定位源文件",
+    "scrapeWithNumber": "指定番号刮削"
   },
   "status": {
     "queued": "排队中",

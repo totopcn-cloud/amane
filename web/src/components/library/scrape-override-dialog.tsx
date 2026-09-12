@@ -11,6 +11,7 @@ type ContentTypeChoice = (typeof CONTENT_TYPE_OPTIONS)[number];
 
 interface ScrapeOverrideDialogProps {
   target: MediaFileResponse | null;
+  initialNumber?: string;
   saving: boolean;
   onClose: () => void;
   onSubmit: (number: string, contentType: ContentType | undefined) => void;
@@ -18,6 +19,7 @@ interface ScrapeOverrideDialogProps {
 
 export function ScrapeOverrideDialog({
   target,
+  initialNumber,
   saving,
   onClose,
   onSubmit,
@@ -29,7 +31,7 @@ export function ScrapeOverrideDialog({
       {target != null && (
         <ScrapeOverrideForm
           key={target.id}
-          initialNumber={target.number ?? ""}
+          initialNumber={initialNumber ?? target.number ?? ""}
           saving={saving}
           onClose={onClose}
           onSubmit={onSubmit}

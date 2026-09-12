@@ -11,7 +11,9 @@
   --tree-line: light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-3));
   --row-rule: light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
   --tree-indent: 28px;
-  --row-cols: minmax(12rem, 1fr) minmax(6rem, 12rem) 6rem 4.5rem 4.5rem 5rem;
+  /* Reserve a fixed final column for task actions. The status, time and ID
+     cells stay in the grid instead of being overlaid by new action buttons. */
+  --row-cols: minmax(12rem, 1fr) minmax(6rem, 10rem) 5rem 4rem 4rem 10.5rem;
   --task-accent: var(--mantine-color-gray-5);
 }
 
@@ -25,7 +27,7 @@
   grid-template-columns: var(--row-cols);
   column-gap: 10px;
   align-items: center;
-  min-width: 42rem;
+  min-width: 48rem;
   height: 3rem;
   padding: 0 8px 0 6px;
   border-bottom: 1px solid var(--row-rule);
@@ -191,7 +193,8 @@
 }
 
 .cellEnd {
-  justify-self: end;
+  justify-self: stretch;
+  min-width: 0;
 }
 
 .progress {
