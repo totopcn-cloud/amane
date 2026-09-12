@@ -15,20 +15,24 @@ import {
 import {
   IconChevronDown,
   IconChevronRight,
-  IconCopy,
   IconDownload,
   IconFolderSearch,
+  IconForms,
   IconPlayerStop,
+  IconPlayerPlay,
   IconRefresh,
   IconTrash,
 } from "@tabler/icons-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { client } from "@/client/client.gen";
-import { getMedia } from "@/client/sdk.gen";
-import type { TaskResponse } from "@/client/types.gen";
+import { getMedia, submitTask } from "@/client/sdk.gen";
+import type { ContentType, MediaFileResponse, TaskResponse } from "@/client/types.gen";
+import { notifications } from "@mantine/notifications";
+import { ScrapeOverrideDialog } from "@/components/library/scrape-override-dialog";
 import { TaskLogView } from "@/components/log/task-log-view";
 import { TaskReportPanel } from "@/components/task/task-report-panel";
+import { extractErrorMessage } from "@/lib/api-error";
 import { formatDuration, statusColor } from "@/lib/task/display";
 import { useProgressStore } from "@/stores/progress";
 
@@ -222,11 +226,12 @@ export function TaskRowActions({
     task.type === "scrape" && typeof task.payload?.media_file_id === "number"
       ? task.payload?.media_file_id ?? null
       : null;
+  const [overrideTarget, setOverrideTarget] = useState<MediaFileResponse | null>(null);
+  const [overrideSaving, setOverrideSaving] = useState(false);
 
-  async function copySourcePath() {
+  async function openSourceFile() {
     if (mediaFileId == null) return;
-    const { data } = await getMedia({ path: { media_id: mediaFileId }, throwOnError: true });
-    await navigator.clipboard.writeText(data.path);
+    await fetch(`${client.getConfig().baseUrl}/api/media/${mediaFileId}/open`, { method: "POST" });
   }
 
   async function revealSourceFile() {
@@ -234,13 +239,48 @@ export function TaskRowActions({
     await fetch(`${client.getConfig().baseUrl}/api/media/${mediaFileId}/reveal`, { method: "POST" });
   }
 
+  async function openOverrideDialog() {
+    if (mediaFileId == null) return;
+    const { data } = await getMedia({ path: { media_id: mediaFileId }, throwOnError: true });
+    setOverrideTarget(data);
+  }
+
+  async function submitOverride(number: string, contentType: ContentType | undefined) {
+    if (overrideTarget == null) return;
+    setOverrideSaving(true);
+    try {
+      await submitTask({
+        body: {
+          type: "scrape",
+          media_id: overrideTarget.id,
+          number,
+          ...(contentType != null ? { content_type: contentType } : {}),
+        },
+        throwOnError: true,
+      });
+      notifications.show({ message: t("common:toast.scrapeStarted"), color: "blue" });
+      setOverrideTarget(null);
+    } catch (err) {
+      notifications.show({
+        message: extractErrorMessage(err, t("common:toast.operationFailed")),
+        color: "red",
+      });
+    } finally {
+      setOverrideSaving(false);
+    }
+  }
+
+  const sourceFileName = overrideTarget?.path.split(/[\\/]/).pop() ?? "";
+
   return (
-    <Group
-      gap={4}
-      wrap="nowrap"
-      onClick={(e) => e.stopPropagation()}
-      onKeyDown={(e) => e.stopPropagation()}
-    >
+    <>
+      <Group
+        gap={4}
+        justify="flex-end"
+        wrap="nowrap"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
       {(task.status === "queued" || task.status === "running") && (
         <Tooltip label={t("actions.cancelTask")}>
           <ActionIcon
@@ -266,9 +306,9 @@ export function TaskRowActions({
       )}
       {mediaFileId != null && (
         <>
-          <Tooltip label={t("actions.copySourcePath")}>
-            <ActionIcon variant="subtle" onClick={() => void copySourcePath()}>
-              <IconCopy size={16} />
+          <Tooltip label={t("actions.openSourceFile")}>
+            <ActionIcon variant="subtle" onClick={() => void openSourceFile()}>
+              <IconPlayerPlay size={16} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label={t("actions.revealSourceFile")}>
@@ -276,6 +316,13 @@ export function TaskRowActions({
               <IconFolderSearch size={16} />
             </ActionIcon>
           </Tooltip>
+          {task.status === "failed" && (
+            <Tooltip label={t("actions.scrapeWithNumber")}>
+              <ActionIcon variant="subtle" onClick={() => void openOverrideDialog()}>
+                <IconForms size={16} />
+              </ActionIcon>
+            </Tooltip>
+          )}
         </>
       )}
       {isTerminal && (
@@ -290,6 +337,16 @@ export function TaskRowActions({
           </ActionIcon>
         </Tooltip>
       )}
-    </Group>
+      </Group>
+      <ScrapeOverrideDialog
+        target={overrideTarget}
+        initialNumber={sourceFileName}
+        saving={overrideSaving}
+        onClose={() => {
+          if (!overrideSaving) setOverrideTarget(null);
+        }}
+        onSubmit={(number, contentType) => void submitOverride(number, contentType)}
+      />
+    </>
   );
 }
