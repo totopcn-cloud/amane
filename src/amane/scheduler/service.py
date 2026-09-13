@@ -17,6 +17,7 @@ from ..handlers.models import ScrapePayload
 from ..library import LibraryFileKind, LibraryScan
 from ..parsing import parse_file_info
 from ..utils.path import is_descendant, path_is_under
+from ..utils.threads import existing_disk_path, path_is_dir
 from .clouddrive import CloudDriveChange, CloudDriveRoute, local_for, match_route
 from .watcher import FileWatcher
 
@@ -351,7 +352,7 @@ class WatcherService:
             if change.is_dir:
                 await self._delete_under(src_route.library_id, local)
             else:
-                await self._on_file_deleted(local)
+                await self._on_file_deleted(local, verify_missing=False)
             return
 
         if change.action == "rename":
@@ -381,19 +382,19 @@ class WatcherService:
             dest = local_for(dest_route, change.destination_file)
             if not self._accept_cloud_file(dest_route, dest):
                 if src_route is not None:
-                    await self._on_file_deleted(local_for(src_route, change.source_file))
+                    await self._on_file_deleted(local_for(src_route, change.source_file), verify_missing=False)
                 return
             if src_route is None:
                 await self._on_file_found(dest, dest_route.library_id)
                 return
             if src_route.library_id != dest_route.library_id:
-                await self._on_file_deleted(local_for(src_route, change.source_file))
+                await self._on_file_deleted(local_for(src_route, change.source_file), verify_missing=False)
                 await self._on_file_found(dest, dest_route.library_id)
                 return
             await self._on_file_moved(local_for(src_route, change.source_file), dest, dest_route.library_id)
             return
         if src_route is not None:
-            await self._on_file_deleted(local_for(src_route, change.source_file))
+            await self._on_file_deleted(local_for(src_route, change.source_file), verify_missing=False)
 
     async def _scan_cloud_dir(self, route: CloudDriveRoute, local: Path) -> None:
         nested = not _same_path(local, Path(route.local_path))
@@ -403,12 +404,22 @@ class WatcherService:
                 await self._on_file_found(hit.path, route.library_id)
 
     async def _delete_under(self, library_id: int, root: Path) -> None:
+        # Watchdog may report a directory deletion while a mapped drive is briefly
+        # unavailable. Never turn that transient event into a mass DB deletion.
+        library = await self._repo.get_library(library_id)
+        if library is None or not await path_is_dir(Path(library.path)):
+            logger.warning("ignored directory deletion event because library is unavailable", library_id=library_id, path=str(root))
+            return
+        if await existing_disk_path(root, follow_symlinks=False) is not None:
+            logger.warning("ignored stale directory deletion event; path still exists", library_id=library_id, path=str(root))
+            return
+
         files = await self._repo.list_media_files(library_id=library_id, limit=None)
         for media in files:
             if media.id is None:
                 continue
             if path_is_under(media.path, root):
-                await self._on_file_deleted(Path(media.path))
+                await self._on_file_deleted(Path(media.path), verify_missing=False)
 
     def _accept_cloud_file(self, route: CloudDriveRoute, path: Path) -> bool:
         return _file_in_scope(path, route) and route.scan.classify(path) is LibraryFileKind.MEDIA
@@ -432,17 +443,17 @@ class WatcherService:
                 if self._accept_cloud_file(dest_route, dest):
                     await self._repo.update_media_file(media.id, path=str(dest))
                 else:
-                    await self._on_file_deleted(Path(media.path))
+                    await self._on_file_deleted(Path(media.path), verify_missing=False)
                 continue
-            await self._on_file_deleted(Path(media.path))
+            await self._on_file_deleted(Path(media.path), verify_missing=False)
             if self._accept_cloud_file(dest_route, dest):
                 await self._on_file_found(dest, dest_route.library_id)
 
     def _on_file_found_sync(self, path: Path, library_id: int) -> None:
         self._schedule_async(self._on_file_found(path, library_id))
 
-    def _on_file_deleted_sync(self, path: Path, _library_id: int) -> None:
-        self._schedule_async(self._on_file_deleted(path))
+    def _on_file_deleted_sync(self, path: Path, library_id: int) -> None:
+        self._schedule_async(self._on_file_deleted(path, library_id=library_id))
 
     def _on_dir_deleted_sync(self, path: Path, library_id: int) -> None:
         self._schedule_async(self._delete_under(library_id, path))
@@ -492,7 +503,29 @@ class WatcherService:
 
         await self._event_bus.emit(EventType.FILE_DISCOVERED, {"path": path_str, "media_file_id": media.id})
 
-    async def _on_file_deleted(self, path: Path) -> None:
+    async def _on_file_deleted(
+        self, path: Path, *, library_id: int | None = None, verify_missing: bool = True
+    ) -> None:
+        """Remove a registered file only after a native watcher delete is confirmed.
+
+        Windows mapped drives can emit a burst of false delete events while a
+        drive is reconnecting. Cloud-drive webhook events are authoritative and
+        opt out through ``verify_missing=False``.
+        """
+        if verify_missing:
+            if library_id is not None:
+                library = await self._repo.get_library(library_id)
+                if library is None or not await path_is_dir(Path(library.path)):
+                    logger.warning(
+                        "ignored file deletion event because library is unavailable",
+                        library_id=library_id,
+                        path=str(path),
+                    )
+                    return
+            if await existing_disk_path(path, follow_symlinks=False) is not None:
+                logger.warning("ignored stale file deletion event; path still exists", path=str(path))
+                return
+
         path_str = str(path)
         media = await self._repo.get_media_file_by_path(path_str)
         if media is None:

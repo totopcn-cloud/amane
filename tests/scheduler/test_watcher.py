@@ -488,18 +488,35 @@ class TestWatcherService:
     @pytest.mark.asyncio(loop_scope="function")
     async def test_on_file_deleted_removes_from_db(self, service, repo: Repository, tmp_path: Path):
         """文件删除时从 DB 移除 MediaFile"""
+        lib = await repo.create_library(name="t", path=str(tmp_path), automation=LibraryAutomation.WATCH)
+        assert lib.id is not None
         test_file = tmp_path / "video.mp4"
         test_file.write_bytes(b"\x00" * 100)
 
         # 先注册文件
-        media = await repo.create_media_file(library_id=1, path=str(test_file))
+        media = await repo.create_media_file(library_id=lib.id, path=str(test_file))
         assert media.id is not None
 
+        test_file.unlink()
         # 调用删除处理器
-        await service._on_file_deleted(test_file)
+        await service._on_file_deleted(test_file, library_id=lib.id)
 
         # 验证已从 DB 移除
         assert await repo.get_media_file(media.id) is None
+
+    @pytest.mark.asyncio(loop_scope="function")
+    async def test_on_file_deleted_ignores_stale_watcher_event(self, service, repo: Repository, tmp_path: Path):
+        """仍存在的真实文件不能因误报删除事件而丢失登记."""
+        lib = await repo.create_library(name="t", path=str(tmp_path), automation=LibraryAutomation.WATCH)
+        assert lib.id is not None
+        test_file = tmp_path / "video.mp4"
+        test_file.write_bytes(b"\x00" * 100)
+        media = await repo.create_media_file(library_id=lib.id, path=str(test_file))
+        assert media.id is not None
+
+        await service._on_file_deleted(test_file, library_id=lib.id)
+
+        assert await repo.get_media_file(media.id) is not None
 
     @pytest.mark.asyncio(loop_scope="function")
     async def test_on_file_deleted_ignores_untracked(self, service, repo: Repository, tmp_path: Path):
