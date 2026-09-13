@@ -147,11 +147,12 @@ class OrganizeResult(BaseModel):
 
 
 class RebuildTagsPayload(LibraryBase):
-    """更新已有 NFO，或为已有元数据的媒体补同名 NFO；不移动媒体或触碰图片资源."""
+    """直接扫描媒体目录，更新已有 NFO 或补同名 NFO；不移动媒体或触碰图片资源."""
 
 
 class RebuildTagsResult(BaseModel):
     scanned: int
+    created: int
     updated: int
     skipped: int
     failed: int
