@@ -2441,6 +2441,40 @@ export type RefreshSubmission = {
 };
 
 /**
+ * RebuildTagsSubmission
+ */
+export type RebuildTagsSubmission = {
+    /**
+     * Library Id
+     *
+     * 所属 Library ID; 扫描/整理在该媒体库下进行
+     */
+    library_id: number;
+    /**
+     * Recursive
+     *
+     * 覆盖 Library 的 recursive; None 沿用库设置
+     */
+    recursive?: boolean | null;
+    /**
+     * Patterns
+     *
+     * 覆盖 Library 的 patterns; None 沿用库设置
+     */
+    patterns?: Array<string> | null;
+    /**
+     * Path
+     *
+     * 要扫描的目录路径 (覆盖 Library 路径, 必须为 Library 子目录).
+     */
+    path?: string;
+    /**
+     * Type
+     */
+    type: 'rebuild_tags';
+};
+
+/**
  * ReleaseResponse
  */
 export type ReleaseResponse = {
@@ -3215,7 +3249,7 @@ export type TaskStatus = 'queued' | 'running' | 'done' | 'failed';
 /**
  * TaskType
  */
-export type TaskType = 'scrape' | 'organize' | 'refresh' | 'cleanup' | 'upscale' | 'r18_import' | 'actor_scrape' | 'rescrape';
+export type TaskType = 'scrape' | 'organize' | 'refresh' | 'cleanup' | 'upscale' | 'r18_import' | 'actor_scrape' | 'rescrape' | 'rebuild_tags';
 
 /**
  * TaskWorkerResponse
@@ -5482,7 +5516,7 @@ export type SubmitTaskData = {
     /**
      * Req
      */
-    body: RefreshSubmission | OrganizeSubmission | ScrapeSubmission | CleanupSubmission | UpscaleSubmission | R18ImportSubmission | ActorScrapeSubmission | RescrapeSubmission;
+    body: RefreshSubmission | OrganizeSubmission | ScrapeSubmission | CleanupSubmission | UpscaleSubmission | R18ImportSubmission | ActorScrapeSubmission | RescrapeSubmission | RebuildTagsSubmission;
     path?: never;
     query?: never;
     url: '/api/tasks';

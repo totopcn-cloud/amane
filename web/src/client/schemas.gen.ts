@@ -4981,6 +4981,63 @@ export const RefreshSubmissionSchema = {
     title: 'RefreshSubmission'
 } as const;
 
+export const RebuildTagsSubmissionSchema = {
+    properties: {
+        library_id: {
+            type: 'integer',
+            title: 'Library Id',
+            description: '所属 Library ID; 扫描/整理在该媒体库下进行',
+            'x-widget': 'LibraryPicker'
+        },
+        recursive: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Recursive',
+            description: '覆盖 Library 的 recursive; None 沿用库设置'
+        },
+        patterns: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Patterns',
+            description: '覆盖 Library 的 patterns; None 沿用库设置'
+        },
+        path: {
+            type: 'string',
+            title: 'Path',
+            description: '要扫描的目录路径 (覆盖 Library 路径, 必须为 Library 子目录).',
+            default: '',
+            'x-path-type': 'directory',
+            'x-widget': 'PathPicker'
+        },
+        type: {
+            type: 'string',
+            const: 'rebuild_tags',
+            title: 'Type'
+        }
+    },
+    type: 'object',
+    required: [
+        'library_id',
+        'type'
+    ],
+    title: 'RebuildTagsSubmission'
+} as const;
+
 export const ReleaseResponseSchema = {
     properties: {
         current: {
@@ -6533,7 +6590,8 @@ export const TaskTypeSchema = {
         'upscale',
         'r18_import',
         'actor_scrape',
-        'rescrape'
+        'rescrape',
+        'rebuild_tags'
     ],
     title: 'TaskType'
 } as const;
