@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING
 import pytest
 
 from amane.db.models import Metadata
-from amane.media import write_nfo
+from amane.media import update_nfo_classification, write_nfo
+from amane.parsing import parse_file_info
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -46,3 +47,31 @@ async def test_write_nfo_has_required_fields(tmp_path: Path, metadata: Metadata)
     assert "<series>Series Y</series>" in content
     assert "<set>" in content
     assert "<name>Series Y</name>" in content
+
+
+@pytest.mark.asyncio(loop_scope="function")
+async def test_write_nfo_adds_uncensored_classification(tmp_path: Path, metadata: Metadata):
+    nfo_path = tmp_path / "HEYZO-1234.nfo"
+
+    ok = await write_nfo(metadata, nfo_path, file_info=parse_file_info("HEYZO-1234.mp4"))
+
+    assert ok is True
+    content = nfo_path.read_text(encoding="utf-8")
+    assert "<tag>无码</tag>" in content
+    assert "<genre>无码专区</genre>" in content
+
+
+@pytest.mark.asyncio(loop_scope="function")
+async def test_rebuild_classification_only_adds_missing_tags(tmp_path: Path):
+    nfo_path = tmp_path / "SIRO-1234.nfo"
+    nfo_path.write_text("<movie>\n  <title>keep me</title>\n</movie>\n", encoding="utf-8")
+
+    ok = await update_nfo_classification(nfo_path, uncensored=True, amateur=True)
+    assert ok is True
+    assert await update_nfo_classification(nfo_path, uncensored=True, amateur=True) is True
+
+    content = nfo_path.read_text(encoding="utf-8")
+    assert "<title>keep me</title>" in content
+    assert content.count("<tag>无码</tag>") == 1
+    assert content.count("<tag>素人</tag>") == 1
+    assert content.count("<genre>无码专区</genre>") == 1
