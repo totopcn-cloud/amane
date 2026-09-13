@@ -1,4 +1,5 @@
 from .actor_scrape import *
+from .classification import *
 from .file import *
 from .models import *
 from .protocol import FollowupTask, ProgressCallback, TaskHandler, TaskResult

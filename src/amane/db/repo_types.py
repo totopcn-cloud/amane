@@ -93,6 +93,10 @@ def _media_file_uncensored_predicate() -> ColumnElement[bool]:
     return or_(col(MediaFile.mosaic) == Mosaic.UNCENSORED, col(MediaFile.content_type) == ContentType.UNCENSORED)
 
 
+def _media_file_amateur_predicate() -> ColumnElement[bool]:
+    return col(MediaFile.content_type) == ContentType.AMATEUR
+
+
 def _apply_media_phase_filters(
     stmt: SelectOfScalar[MediaFile],
     *,
@@ -101,6 +105,7 @@ def _apply_media_phase_filters(
     uncensored: bool | None = None,
     definition: str | None = None,
     content_type: ContentType | None = None,
+    amateur: bool | None = None,
 ) -> SelectOfScalar[MediaFile]:
     """None 表示该相位不过滤."""
     if has_subtitle is not None:
@@ -114,6 +119,9 @@ def _apply_media_phase_filters(
         stmt = stmt.where(col(MediaFile.definition) == definition)
     if content_type is not None:
         stmt = stmt.where(col(MediaFile.content_type) == content_type)
+    if amateur is not None:
+        flag = _media_file_amateur_predicate()
+        stmt = stmt.where(flag if amateur else ~flag)
     return stmt
 
 

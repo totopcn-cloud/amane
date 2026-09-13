@@ -1,5 +1,7 @@
 """Kodi ``<movie>`` NFO, 供 Emby / Jellyfin / Kodi 读取."""
 
+from __future__ import annotations
+
 import re
 from io import StringIO
 from typing import TYPE_CHECKING
@@ -7,10 +9,13 @@ from typing import TYPE_CHECKING
 import aiofiles
 import structlog
 
+from ..parsing import classification_tags
+
 if TYPE_CHECKING:
     from pathlib import Path
 
     from ..db.models import Metadata
+    from ..parsing import FileInfo
 
 
 logger = structlog.get_logger()
@@ -31,7 +36,35 @@ def _escape_xml(text: str) -> str:
     return text
 
 
-async def write_nfo(metadata: Metadata, nfo_path: Path) -> bool:
+async def update_nfo_classification(nfo_path: Path, *, uncensored: bool, amateur: bool) -> bool:
+    """仅向已有 NFO 补充分类节点, 保留原文本与所有资源字段."""
+    try:
+        async with aiofiles.open(nfo_path, "r", encoding="UTF-8") as f:
+            xml = await f.read()
+        additions: list[str] = []
+        if uncensored and not re.search(r"<tag>\s*(?:无码|無碼)\s*</tag>", xml, re.IGNORECASE):
+            additions.append("  <tag>无码</tag>")
+        if amateur and not re.search(r"<tag>\s*素人\s*</tag>", xml):
+            additions.append("  <tag>素人</tag>")
+        if uncensored and not re.search(r"<genre>\s*无码专区\s*</genre>", xml):
+            additions.append("  <genre>无码专区</genre>")
+        if not additions:
+            return True
+        marker = "</movie>"
+        if marker not in xml:
+            return False
+        updated = xml.replace(marker, "\n".join(additions) + "\n" + marker, 1)
+        async with aiofiles.open(nfo_path, "w", encoding="UTF-8") as f:
+            await f.write(updated)
+        return True
+    except FileNotFoundError:
+        return False
+    except Exception:
+        logger.exception("nfo classification update failed", path=str(nfo_path))
+        return False
+
+
+async def write_nfo(metadata: Metadata, nfo_path: Path, *, file_info: FileInfo | None = None) -> bool:
     try:
         nfo_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -90,11 +123,25 @@ async def write_nfo(metadata: Metadata, nfo_path: Path) -> bool:
             code.write(f"  <publisher>{_escape_xml(metadata.publisher)}</publisher>\n")
             code.write(f"  <label>{_escape_xml(metadata.publisher)}</label>\n")
 
-        if metadata.tags:
-            for tag in metadata.tags:
+        tags = list(metadata.tags)
+        if file_info is not None:
+            uncensored, amateur = classification_tags(file_info)
+            if uncensored and "无码" not in tags:
+                tags.append("无码")
+            if amateur and "素人" not in tags:
+                tags.append("素人")
+
+        if tags:
+            for tag in tags:
                 if tag:
                     code.write(f"  <tag>{_escape_xml(tag)}</tag>\n")
-                    code.write(f"  <genre>{_escape_xml(tag)}</genre>\n")
+                    if tag != "无码":
+                        code.write(f"  <genre>{_escape_xml(tag)}</genre>\n")
+
+        if file_info is not None:
+            uncensored, _ = classification_tags(file_info)
+            if uncensored:
+                code.write("  <genre>无码专区</genre>\n")
 
         if metadata.poster_url:
             code.write(f"  <poster>{_escape_xml(metadata.poster_url)}</poster>\n")

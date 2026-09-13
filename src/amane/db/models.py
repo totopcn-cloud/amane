@@ -39,6 +39,7 @@ class TaskType(StrEnum):
     R18_IMPORT = "r18_import"
     ACTOR_SCRAPE = "actor_scrape"
     RESCRAPE = "rescrape"
+    REBUILD_TAGS = "rebuild_tags"
 
 
 class RoutineType(StrEnum):

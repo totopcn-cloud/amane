@@ -104,6 +104,7 @@ class MediaRepoMixin(RepositoryMixinBase):
         uncensored: bool | None = None,
         definition: str | None = None,
         content_type: ContentType | None = None,
+        amateur: bool | None = None,
     ) -> list[MediaFile]:
         """limit None 不分页."""
         async with self._session() as session:
@@ -124,6 +125,7 @@ class MediaRepoMixin(RepositoryMixinBase):
                 uncensored=uncensored,
                 definition=definition,
                 content_type=content_type,
+                amateur=amateur,
             )
             # 次级排序键 id 保证分页稳定.
             stmt = (
@@ -145,6 +147,7 @@ class MediaRepoMixin(RepositoryMixinBase):
         uncensored: bool | None = None,
         definition: str | None = None,
         content_type: ContentType | None = None,
+        amateur: bool | None = None,
     ) -> int:
         async with self._session() as session:
             base = select(MediaFile)
@@ -162,6 +165,7 @@ class MediaRepoMixin(RepositoryMixinBase):
                 uncensored=uncensored,
                 definition=definition,
                 content_type=content_type,
+                amateur=amateur,
             )
             stmt = select(count()).select_from(base.subquery())
             result = await session.exec(stmt)

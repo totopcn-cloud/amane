@@ -146,6 +146,17 @@ class OrganizeResult(BaseModel):
     """扫描判定为归档并移入 `.amane_trash` 的文件数."""
 
 
+class RebuildTagsPayload(LibraryBase):
+    """只更新已有 NFO 的分类节点, 不移动媒体或触碰图片资源."""
+
+
+class RebuildTagsResult(BaseModel):
+    scanned: int
+    updated: int
+    skipped: int
+    failed: int
+
+
 # --- CLEANUP ---
 
 

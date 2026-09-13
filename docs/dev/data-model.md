@@ -27,6 +27,8 @@
 
 文件相位 (`content_type` / `mosaic` / `has_subtitle` / `definition`) 是 **path 的投影**, 只落在 `MediaFile`: 创建与修改 path 时用同一次 `parse_file_info` 回填, 不纳入对外 PATCH. `cd` 仍只用于 ORGANIZE 分集配对, 不落库. `content_type` 是番号 / 目录片种 (刮削路由); `mosaic` 是这份文件的无码 / 破解 / 流出标记. 无码展示与筛选是 `mosaic=uncensored OR content_type=uncensored` (HEYZO 正片不必带文件名无码标记; 有码号的 `-U` / `-UC` 是破解, 片种仍是 censored). `ContentType.chinese` 是国产, 不是中字 — 中字只依据 `has_subtitle`. Metadata 列表的角标 / 筛选经由关联 EXISTS / 页级聚合 (`file_phase`): 任一挂载文件具备即亮; `definition` 取最高档. 没有挂载文件的 Metadata 不会命中这些筛选, 也没有角标. `{mosaic?}` 模板不用片种兜底, 避免 HEYZO 被整理出文件名里没有的 `-uncensored`.
 
+NFO 分类节点由同一份文件相位判定生成: 无码追加 `<genre>无码专区</genre>` 与 `<tag>无码</tag>`, 素人追加 `<tag>素人</tag>`, 两个维度互不替代。`REBUILD_TAGS` 任务只读取库内已索引媒体及其相邻 NFO，原地补节点；不会移动、重命名媒体，也不会下载、删除或重写海报资源。
+
 ORGANIZE 复制到库路径的 poster / thumb 在 `watermark.enabled` 时按**源文件** FileInfo 叠 PNG 角标 (不修改 Resource 原图, 不修改 fanart). 高度 = 图高 × `watermark.scale`; 各类别贴 `watermark.corners` 指定的角, 同角向内叠. 包内置 `subtitle` / `uncensored` / `cracked` / `leaked` / `4k` / `8k`; `{data_dir}/watermarks/{stem}.png` 同名覆盖, 损坏则回退内置, 缺文件跳过该枚 (清晰度 stem = `definition.casefold()`, 用户可自行放置 `1080p.png`). 列始终跟当前 path: 模板若写出标记, 二次整理仍能反推.
 
 `Metadata.number` 的唯一约束与 `get_metadata_by_number` / `upsert_metadata` 查重均忽略大小写; 命中已有行时不改写库内 `number` 字符串 (保留首次写入的大小写). 新建时按调用方传入原样落库. 调用方那份字符串是否已经过路径解析重写, 见 [crawlers.md](crawlers.md) 番号入参.

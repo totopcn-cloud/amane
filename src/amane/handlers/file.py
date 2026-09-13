@@ -126,7 +126,7 @@ async def execute_file_operations(
 
     # 写入 NFO.
     if org_result.success and org_result.dest and write_nfo:
-        await write_nfo_file(metadata, paths.nfo)
+        await write_nfo_file(metadata, paths.nfo, file_info=info)
 
     # 字幕按模板落到 video_dest 侧.
     if org_result.success and org_result.dest and library is not None and subtitles:
