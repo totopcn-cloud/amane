@@ -6,7 +6,9 @@
     "submit": "Submit Task",
     "openSourceFile": "Open file",
     "revealSourceFile": "Locate source file",
-    "scrapeWithNumber": "Scrape with number"
+    "scrapeWithNumber": "Scrape with number",
+    "preserveFromArchive": "Keep manually; exclude from archive",
+    "preservedFromArchive": "Marked to keep; bulk archive will skip this file"
   },
   "status": {
     "queued": "Queued",
@@ -118,7 +120,9 @@
     "retry_other": "Retried {{count}}",
     "delete": "Deleted {{count}}",
     "delete_one": "Deleted {{count}}",
-    "delete_other": "Deleted {{count}}"
+    "delete_other": "Deleted {{count}}",
+    "archiveFailed_one": "batch.archiveFailed",
+    "archiveFailed_other": "batch.archiveFailed"
   },
   "confirm": {
     "archiveFailedTitle": "Archive failed folders",

@@ -276,6 +276,7 @@ class MediaFileUpdates(TypedDict, total=False):
     duration: float | None
     codec: str | None
     status: MediaFileStatus
+    archive_exempt: bool
     metadata_id: int | None
 
 

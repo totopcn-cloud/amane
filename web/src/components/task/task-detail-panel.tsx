@@ -21,6 +21,7 @@ import {
   IconPlayerStop,
   IconPlayerPlay,
   IconRefresh,
+  IconShieldCheck,
   IconTrash,
 } from "@tabler/icons-react";
 import { type ReactNode, useState } from "react";
@@ -224,10 +225,11 @@ export function TaskRowActions({
   const isTerminal = task.status === "done" || task.status === "failed";
   const mediaFileId =
     task.type === "scrape" && typeof task.payload?.media_file_id === "number"
-      ? task.payload?.media_file_id ?? null
+      ? (task.payload?.media_file_id ?? null)
       : null;
   const [overrideTarget, setOverrideTarget] = useState<MediaFileResponse | null>(null);
   const [overrideSaving, setOverrideSaving] = useState(false);
+  const [preserving, setPreserving] = useState(false);
 
   async function openSourceFile() {
     if (mediaFileId == null) return;
@@ -236,7 +238,9 @@ export function TaskRowActions({
 
   async function revealSourceFile() {
     if (mediaFileId == null) return;
-    await fetch(`${client.getConfig().baseUrl}/api/media/${mediaFileId}/reveal`, { method: "POST" });
+    await fetch(`${client.getConfig().baseUrl}/api/media/${mediaFileId}/reveal`, {
+      method: "POST",
+    });
   }
 
   async function openOverrideDialog() {
@@ -270,6 +274,27 @@ export function TaskRowActions({
     }
   }
 
+  async function preserveManually() {
+    if (mediaFileId == null) return;
+    setPreserving(true);
+    try {
+      const response = await fetch(`${client.getConfig().baseUrl}/api/media/${mediaFileId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archive_exempt: true }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      notifications.show({ message: t("actions.preservedFromArchive"), color: "blue" });
+    } catch (err) {
+      notifications.show({
+        message: extractErrorMessage(err, t("common:toast.operationFailed")),
+        color: "red",
+      });
+    } finally {
+      setPreserving(false);
+    }
+  }
+
   const sourceFileName = overrideTarget?.path.split(/[\\/]/).pop() ?? "";
 
   return (
@@ -281,62 +306,74 @@ export function TaskRowActions({
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
       >
-      {(task.status === "queued" || task.status === "running") && (
-        <Tooltip label={t("actions.cancelTask")}>
-          <ActionIcon
-            variant="subtle"
-            color="orange"
-            loading={actions.pending}
-            onClick={() => actions.onCancel(task.id)}
-          >
-            <IconPlayerStop size={16} />
-          </ActionIcon>
-        </Tooltip>
-      )}
-      {task.status === "failed" && (
-        <Tooltip label={t("common:actions.retry")}>
-          <ActionIcon
-            variant="subtle"
-            loading={actions.pending}
-            onClick={() => actions.onRetry(task.id)}
-          >
-            <IconRefresh size={16} />
-          </ActionIcon>
-        </Tooltip>
-      )}
-      {mediaFileId != null && (
-        <>
-          <Tooltip label={t("actions.openSourceFile")}>
-            <ActionIcon variant="subtle" onClick={() => void openSourceFile()}>
-              <IconPlayerPlay size={16} />
+        {(task.status === "queued" || task.status === "running") && (
+          <Tooltip label={t("actions.cancelTask")}>
+            <ActionIcon
+              variant="subtle"
+              color="orange"
+              loading={actions.pending}
+              onClick={() => actions.onCancel(task.id)}
+            >
+              <IconPlayerStop size={16} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label={t("actions.revealSourceFile")}>
-            <ActionIcon variant="subtle" onClick={() => void revealSourceFile()}>
-              <IconFolderSearch size={16} />
+        )}
+        {task.status === "failed" && (
+          <Tooltip label={t("common:actions.retry")}>
+            <ActionIcon
+              variant="subtle"
+              loading={actions.pending}
+              onClick={() => actions.onRetry(task.id)}
+            >
+              <IconRefresh size={16} />
             </ActionIcon>
           </Tooltip>
-          {task.status === "failed" && (
-            <Tooltip label={t("actions.scrapeWithNumber")}>
-              <ActionIcon variant="subtle" onClick={() => void openOverrideDialog()}>
-                <IconForms size={16} />
+        )}
+        {mediaFileId != null && (
+          <>
+            <Tooltip label={t("actions.openSourceFile")}>
+              <ActionIcon variant="subtle" onClick={() => void openSourceFile()}>
+                <IconPlayerPlay size={16} />
               </ActionIcon>
             </Tooltip>
-          )}
-        </>
-      )}
-      {isTerminal && (
-        <Tooltip label={t("common:actions.delete")}>
-          <ActionIcon
-            variant="subtle"
-            color="red"
-            loading={actions.pending}
-            onClick={() => void actions.onDelete(task.id)}
-          >
-            <IconTrash size={16} />
-          </ActionIcon>
-        </Tooltip>
-      )}
+            <Tooltip label={t("actions.revealSourceFile")}>
+              <ActionIcon variant="subtle" onClick={() => void revealSourceFile()}>
+                <IconFolderSearch size={16} />
+              </ActionIcon>
+            </Tooltip>
+            {task.status === "failed" && (
+              <Tooltip label={t("actions.scrapeWithNumber")}>
+                <ActionIcon variant="subtle" onClick={() => void openOverrideDialog()}>
+                  <IconForms size={16} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {task.status === "failed" && (
+              <Tooltip label={t("actions.preserveFromArchive")}>
+                <ActionIcon
+                  variant="subtle"
+                  color="teal"
+                  loading={preserving}
+                  onClick={() => void preserveManually()}
+                >
+                  <IconShieldCheck size={16} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </>
+        )}
+        {isTerminal && (
+          <Tooltip label={t("common:actions.delete")}>
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              loading={actions.pending}
+              onClick={() => void actions.onDelete(task.id)}
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+          </Tooltip>
+        )}
       </Group>
       <ScrapeOverrideDialog
         target={overrideTarget}

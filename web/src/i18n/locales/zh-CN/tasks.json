@@ -6,7 +6,9 @@
     "submit": "提交任务",
     "openSourceFile": "打开文件",
     "revealSourceFile": "定位源文件",
-    "scrapeWithNumber": "指定番号刮削"
+    "scrapeWithNumber": "指定番号刮削",
+    "preserveFromArchive": "人工保留，不再归档",
+    "preservedFromArchive": "已人工保留；一键归档会跳过此文件"
   },
   "status": {
     "queued": "排队中",

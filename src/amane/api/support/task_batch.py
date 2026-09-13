@@ -119,11 +119,11 @@ async def _library_for_task(repo: Repository, task: Task) -> Library | None:
 
 
 async def archive_failed_scrape_files(repo: Repository) -> ArchiveFailedResponse:
-    """Archive failed media, accepting both failed status and failed scrape tasks."""
+    """Archive failed media, excluding files the user manually chose to retain."""
     failed_media_by_id = {
         media.id: media
         for media in await repo.list_media_files(status=[MediaFileStatus.FAILED], limit=None)
-        if media.id is not None
+        if media.id is not None and not media.archive_exempt
     }
     failed_tasks = await repo.find_tasks(statuses=[TaskStatus.FAILED], task_types=[TaskType.SCRAPE])
     legacy_numbers_by_library: dict[int, set[str]] = {}
@@ -134,6 +134,9 @@ async def archive_failed_scrape_files(repo: Repository) -> ArchiveFailedResponse
         if not isinstance(media_id, int) or isinstance(media_id, bool) or media_id in failed_media_by_id:
             continue
         media = await repo.get_media_file(media_id)
+        # 人工保留优先于任何历史失败任务；文件即使后来被手动移动，也不能再次归档。
+        if media is not None and media.archive_exempt:
+            continue
         # A later successful retry takes precedence over a historical failed task.
         if media is not None and media.status != MediaFileStatus.SCRAPED:
             failed_media_by_id[media_id] = media

@@ -156,6 +156,8 @@ class MediaFile(SQLModel, table=True):
     codec: str | None = None
     number: str | None = Field(default=None, index=True)
     status: MediaFileStatus = Field(default=MediaFileStatus.PENDING, index=True)
+    # 用户已人工确认应保留的失败文件，不参与“一键归档失败文件夹”。
+    archive_exempt: bool = Field(default=False, index=True)
     # 文件相位: path 的投影, 随 path 写入/更新; 不进对外 PATCH.
     content_type: ContentType = Field(default=ContentType.WESTERN, index=True)
     mosaic: Mosaic | None = Field(default=None, index=True)

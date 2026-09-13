@@ -17,6 +17,7 @@ class MediaFileResponse(BaseModel):
     codec: str | None = None
     number: str | None = None
     status: MediaFileStatus
+    archive_exempt: bool = False
     content_type: ContentType
     mosaic: Mosaic | None = None
     has_subtitle: bool = False
@@ -35,5 +36,7 @@ if TYPE_CHECKING:
     type MediaFileUpdateRequest = MediaFile
 
 MediaFileUpdateRequest = create_partial_model(
-    MediaFile, fields=("status", "number", "path", "metadata_id"), partial_cls_name="MediaFileUpdateRequest"
+    MediaFile,
+    fields=("status", "number", "path", "metadata_id", "archive_exempt"),
+    partial_cls_name="MediaFileUpdateRequest",
 )

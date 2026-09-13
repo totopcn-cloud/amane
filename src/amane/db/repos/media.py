@@ -192,6 +192,8 @@ class MediaRepoMixin(RepositoryMixinBase):
                 media.codec = updates["codec"]
             if "status" in updates:
                 media.status = updates["status"]
+            if "archive_exempt" in updates:
+                media.archive_exempt = updates["archive_exempt"]
             if "metadata_id" in updates:
                 media.metadata_id = updates["metadata_id"]
             media.updated_at = _utcnow()
