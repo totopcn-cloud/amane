@@ -147,7 +147,7 @@ class OrganizeResult(BaseModel):
 
 
 class RebuildTagsPayload(LibraryBase):
-    """只更新已有 NFO 的分类节点, 不移动媒体或触碰图片资源."""
+    """更新已有 NFO，或为已有元数据的媒体补同名 NFO；不移动媒体或触碰图片资源."""
 
 
 class RebuildTagsResult(BaseModel):

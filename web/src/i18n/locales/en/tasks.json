@@ -346,7 +346,7 @@
       },
       "path": {
         "label": "Path",
-        "description": "Only updates existing NFO files in this library or subdirectory. It never moves or renames videos, or downloads or deletes artwork."
+        "description": "Updates existing NFO files, or creates a same-name NFO beside media that already has scraped metadata. It never moves or renames videos, or downloads or deletes artwork."
       }
     }
   },

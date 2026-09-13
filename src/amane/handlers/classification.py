@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import structlog
 
-from ..media import update_nfo_classification
+from ..media import update_nfo_classification, write_nfo
 from ..parsing import classification_tags, parse_file_info
 from ..utils.path import is_descendant
 from .models import RebuildTagsPayload, RebuildTagsResult
@@ -36,16 +36,21 @@ class RebuildTagsHandler(TaskHandler[RebuildTagsPayload, RebuildTagsResult]):
         for index, item in enumerate(media, start=1):
             scanned += 1
             nfo_path = Path(item.path).with_suffix(".nfo")
-            if not nfo_path.is_file():
-                skipped += 1
-                await self.report_progress(index, total, nfo_path.name)
-                continue
             info = parse_file_info(item.path)
             uncensored, amateur = classification_tags(info)
             metadata = await self._repo.get_metadata(item.metadata_id) if item.metadata_id is not None else None
             if metadata is not None and "素人" in metadata.tags:
                 amateur = True
-            if await update_nfo_classification(nfo_path, uncensored=uncensored, amateur=amateur):
+
+            if not nfo_path.is_file():
+                # 有可用刮削元数据时，只在视频旁补同名 NFO；不执行整理、移动或资源下载。
+                if metadata is None:
+                    skipped += 1
+                elif await write_nfo(metadata, nfo_path, file_info=info):
+                    updated += 1
+                else:
+                    failed += 1
+            elif await update_nfo_classification(nfo_path, uncensored=uncensored, amateur=amateur):
                 updated += 1
             else:
                 failed += 1
