@@ -34,7 +34,8 @@
     "refresh": "Refresh",
     "r18_import": "R18 Import",
     "actor_scrape": "Actor Scrape",
-    "rescrape": "Rescrape"
+    "rescrape": "Rescrape",
+    "rebuild_tags": "Rebuild classification tags"
   },
   "total_one": "tasks:total",
   "total_other": "tasks:total",
@@ -146,7 +147,8 @@
       "refresh": "Refresh",
       "r18_import": "R18 Import",
       "actor_scrape": "Actor Scrape",
-      "rescrape": "Rescrape"
+      "rescrape": "Rescrape",
+      "rebuild_tags": "Rebuild classification tags"
     },
     "cleanup": {
       "remove_missing_files": {
@@ -320,6 +322,24 @@
       "min_age_days": {
         "label": "Min age (days)",
         "description": "Only process metadata not updated within this interval"
+      }
+    },
+    "rebuild_tags": {
+      "library_id": {
+        "label": "Library",
+        "description": ""
+      },
+      "recursive": {
+        "label": "Recursive scan",
+        "description": "Override library setting"
+      },
+      "patterns": {
+        "label": "Patterns",
+        "description": "Override library setting"
+      },
+      "path": {
+        "label": "Path",
+        "description": "Only updates existing NFO files in this library or subdirectory. It never moves or renames videos, or downloads or deletes artwork."
       }
     }
   },

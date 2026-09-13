@@ -7,6 +7,7 @@ import {
   IconRefresh,
   IconRepeat,
   IconSearch,
+  IconTags,
   IconUser,
 } from "@tabler/icons-react";
 import type { TaskChildStatusCounts, TaskResponse, TaskStatus, TaskType } from "@/client/types.gen";
@@ -22,6 +23,7 @@ export const TASK_ICONS: Record<TaskType, Icon> = exhaustiveRecord<TaskType>()({
   r18_import: IconDatabase,
   actor_scrape: IconUser,
   rescrape: IconRepeat,
+  rebuild_tags: IconTags,
 });
 
 const EMPTY_CHILD_STATUS: Required<TaskChildStatusCounts> = {

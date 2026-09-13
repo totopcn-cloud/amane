@@ -73,6 +73,7 @@ export const TASK_TYPES = exhaustiveTuple<TaskType>()(
   "r18_import",
   "actor_scrape",
   "rescrape",
+  "rebuild_tags",
 );
 
 export const DOWNLOADABLE_RESOURCES = exhaustiveTuple<DownloadableResource>()(
@@ -153,6 +154,7 @@ export const SUBMITTABLE_TASK_TYPES = exhaustiveTuple<SubmittableTaskType>()(
   "r18_import",
   "actor_scrape",
   "rescrape",
+  "rebuild_tags",
 );
 
 /** 刮削站点结果分组顺序. */
