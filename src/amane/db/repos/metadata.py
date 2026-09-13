@@ -23,6 +23,7 @@ from ..models import (
 )
 from ..repo_types import (
     MetadataFields,
+    _media_file_amateur_predicate,
     _media_file_uncensored_predicate,
     _metadata_has_files_clause,
     _metadata_linked_file_exists,
@@ -61,6 +62,7 @@ class MetadataRepoMixin(RepositoryMixinBase):
         uncensored: bool | None = None,
         definition: str | None = None,
         content_type: ContentType | None = None,
+        amateur: bool | None = None,
         ids: Sequence[int] | None = None,
         id_subquery_sql: str | None = None,
         updated_before: datetime | None = None,
@@ -133,6 +135,9 @@ class MetadataRepoMixin(RepositoryMixinBase):
                 base = base.where(_metadata_linked_file_exists(col(MediaFile.definition) == definition))
             if content_type is not None:
                 base = base.where(_metadata_linked_file_exists(col(MediaFile.content_type) == content_type))
+            if amateur is not None:
+                flag = _metadata_linked_file_exists(_media_file_amateur_predicate())
+                base = base.where(flag if amateur else ~flag)
             if updated_before is not None:
                 base = base.where(col(Metadata.updated_at) < updated_before)
 

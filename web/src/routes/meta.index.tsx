@@ -82,6 +82,7 @@ const metaSearchSchema = z.object({
   mosaic: z.enum(MOSAICS).optional(),
   definition: z.enum(FILE_DEFINITIONS).optional(),
   content_type: z.enum(CONTENT_TYPES).optional(),
+  work_type: z.enum(["amateur", "non_amateur"]).optional(),
   saved_query_id: z.coerce.number().int().positive().optional(),
 });
 
@@ -173,13 +174,16 @@ function MetaIndexPage() {
     mosaic: search.mosaic ?? null,
     definition: search.definition ?? null,
     content_type: search.content_type ?? null,
+    work_type: search.work_type ?? null,
   };
   const phaseActive =
     filePhase.has_subtitle !== null ||
     filePhase.uncensored !== null ||
     filePhase.mosaic != null ||
     filePhase.definition != null ||
-    filePhase.content_type != null;
+    filePhase.content_type != null ||
+    filePhase.work_type != null;
+
   const [searchInput, setSearchInput] = useState(search.q ?? "");
   const [advancedOpen, setAdvancedOpen] = useState(hasFiles !== null || phaseActive);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -204,6 +208,7 @@ function MetaIndexPage() {
     mosaic: filePhase.mosaic ?? undefined,
     definition: filePhase.definition ?? undefined,
     content_type: filePhase.content_type ?? undefined,
+    amateur: filePhase.work_type === "amateur" ? true : filePhase.work_type === "non_amateur" ? false : undefined,
     ...filters,
     ...(search.saved_query_id != null ? { saved_query_id: search.saved_query_id } : {}),
   };
@@ -311,6 +316,7 @@ function MetaIndexPage() {
         mosaic: value.mosaic ?? undefined,
         definition: value.definition ?? undefined,
         content_type: value.content_type ?? undefined,
+        work_type: value.work_type ?? undefined,
         page: 1,
       }),
     });

@@ -10,6 +10,7 @@ from ...handlers import (
     R18ImportPayload,
     RefreshPayload,
     RescrapePayload,
+    RebuildTagsPayload,
     ScrapePayload,
     UpscalePayload,
 )
@@ -20,6 +21,7 @@ from ..models import (
     R18ImportSubmission,
     RefreshSubmission,
     RescrapeSubmission,
+    RebuildTagsSubmission,
     ScrapeSubmission,
     TaskSubmission,
     UpscaleSubmission,
@@ -37,6 +39,7 @@ ResolvedPayload = (
     | R18ImportPayload
     | ActorScrapePayload
     | RescrapePayload
+    | RebuildTagsPayload
 )
 
 
@@ -65,5 +68,8 @@ async def resolve_submission(req: TaskSubmission, repo: Repository) -> tuple[Tas
             return TaskType.ACTOR_SCRAPE, ActorScrapePayload(actor_id=req.actor_id, use_cache=req.use_cache)
         case RescrapeSubmission():
             return TaskType.RESCRAPE, RescrapePayload(limit=req.limit, min_age_days=req.min_age_days)
+        case RebuildTagsSubmission():
+            await req.resolve(repo)
+            return TaskType.REBUILD_TAGS, req
         case _:
             assert_never(req)

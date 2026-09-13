@@ -3547,6 +3547,8 @@ export type ListMediaData = {
          * Filter by content type
          */
         content_type?: ContentType | null;
+        /** Filter by amateur work type */
+        amateur?: boolean | null;
         /**
          * Limit
          */
@@ -3797,6 +3799,8 @@ export type ListMetadataData = {
          * Filter by linked file content type
          */
         content_type?: ContentType | null;
+        /** Filter by linked amateur work type */
+        amateur?: boolean | null;
         /**
          * Saved Query Id
          *

@@ -18,6 +18,7 @@ from ..enums import SiteName
 from ..handlers import (
     ActorScrapeHandler,
     CleanupHandler,
+    RebuildTagsHandler,
     OrganizeHandler,
     R18ImportHandler,
     RefreshHandler,
@@ -332,6 +333,7 @@ def build_handlers(
         TaskType.CLEANUP: CleanupHandler(repo=repo, resource_store=resource_store),
         TaskType.UPSCALE: UpscaleHandler(resource_store, hot),
         TaskType.RESCRAPE: RescrapeHandler(repo),
+        TaskType.REBUILD_TAGS: RebuildTagsHandler(repo),
     }
     # state_dir 缺省回退 cwd/data (精简构造场景).
     handlers[TaskType.R18_IMPORT] = R18ImportHandler(

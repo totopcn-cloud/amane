@@ -13,6 +13,7 @@ from ...handlers import (
     R18ImportPayload,
     RefreshPayload,
     RescrapePayload,
+    RebuildTagsPayload,
     ScrapePayload,
     UpscalePayload,
 )
@@ -184,6 +185,10 @@ class RescrapeSubmission(RescrapePayload):
     type: Literal["rescrape"]
 
 
+class RebuildTagsSubmission(RebuildTagsPayload):
+    type: Literal["rebuild_tags"]
+
+
 class ActorScrapeSubmission(BaseModel):
     type: Literal["actor_scrape"]
     actor_id: int = Field(description="Actor 实体 ID")
@@ -201,7 +206,8 @@ TaskSubmission = Annotated[
     | UpscaleSubmission
     | R18ImportSubmission
     | ActorScrapeSubmission
-    | RescrapeSubmission,
+    | RescrapeSubmission
+    | RebuildTagsSubmission,
     Field(discriminator="type"),
 ]
 

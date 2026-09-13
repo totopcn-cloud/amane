@@ -23,6 +23,7 @@ export type FilePhaseFilters = {
   mosaic: Mosaic | null;
   definition: (typeof FILE_DEFINITIONS)[number] | null;
   content_type: ContentType | null;
+  work_type: "amateur" | "non_amateur" | null;
 };
 
 interface FacetFilterControlsProps {
@@ -123,6 +124,10 @@ function parseDefinition(value: string | null): (typeof FILE_DEFINITIONS)[number
   return null;
 }
 
+function parseWorkType(value: string | null): FilePhaseFilters["work_type"] {
+  return value === "amateur" || value === "non_amateur" ? value : null;
+}
+
 export function FacetFilterControls({
   opened,
   filters,
@@ -172,6 +177,31 @@ export function FacetFilterControls({
             data={triData}
             value={triSelectValue(filePhase.has_subtitle)}
             onChange={(v) => onFilePhaseChange({ ...filePhase, has_subtitle: parseTriSelect(v) })}
+            clearable
+            size="sm"
+          />
+          <Select
+            label={t("search.mosaicStatus")}
+            placeholder={t("search.any")}
+            data={[
+              { value: "uncensored", label: t("search.mosaicStatusValues.uncensored") },
+              { value: "censored", label: t("search.mosaicStatusValues.censored") },
+              { value: "cracked", label: t("search.mosaicStatusValues.cracked") },
+            ]}
+            value={filePhase.uncensored === true ? "uncensored" : filePhase.uncensored === false ? "censored" : filePhase.mosaic === "cracked" ? "cracked" : null}
+            onChange={(v) => onFilePhaseChange({ ...filePhase, uncensored: v === "uncensored" ? true : v === "censored" ? false : null, mosaic: v === "cracked" ? "cracked" : null })}
+            clearable
+            size="sm"
+          />
+          <Select
+            label={t("search.workType")}
+            placeholder={t("search.any")}
+            data={[
+              { value: "amateur", label: t("search.workTypeValues.amateur") },
+              { value: "non_amateur", label: t("search.workTypeValues.nonAmateur") },
+            ]}
+            value={filePhase.work_type}
+            onChange={(v) => onFilePhaseChange({ ...filePhase, work_type: parseWorkType(v) })}
             clearable
             size="sm"
           />

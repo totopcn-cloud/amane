@@ -69,6 +69,14 @@ class FilePhaseSummary:
     definition: str | None = None
 
 
+def classification_tags(info: FileInfo) -> tuple[bool, bool]:
+    """返回 ``(uncensored, amateur)`` 分类, 复用既有文件相位判定."""
+    return (
+        file_shows_uncensored(info.mosaic, info.content_type),
+        info.content_type == ContentType.AMATEUR,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
